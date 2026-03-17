@@ -20,6 +20,7 @@ Este é o meu repositório pessoal de estudos na área de **Análise de Dados**.
 | 🗄️ **Banco de Dados** | SQL, consultas e modelagem de dados |
 | 📊 **Matplotlib / Seaborn** | Gráficos e visualizações em Python |
 | 📓 **Jupyter Notebook** | Ambiente interativo para exploração de dados |
+| 🤖 **Machine Learning** | permite aos computadores aprenderem |
 
 ---
 
