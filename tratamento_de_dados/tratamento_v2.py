@@ -32,6 +32,9 @@ for nome, caminho in arquivos.items():
     df['E3TIMESTAMP'] = df['E3TIMESTAMP'].dt.floor('s')  # remove microssegundos
     print(f"  E3TIMESTAMP convertido. Exemplo: {df['E3TIMESTAMP'].iloc[0]}")
 
+    # Garantir que E3TIMESTAMP nao tenha timezone para salvar corretamente no Excel
+    df['E3TIMESTAMP'] = df['E3TIMESTAMP'].dt.tz_localize(None)
+
     # 2. Remover colunas com a palavra QUALITY
     cols_quality = [c for c in df.columns if 'QUALITY' in c]
     df = df.drop(columns=cols_quality)
@@ -44,13 +47,15 @@ for nome, caminho in arquivos.items():
     nulos_depois = df.isnull().sum().sum()
     print(f"  Nulos tratados: {nulos_antes} -> {nulos_depois}")
 
-    # 4. Filtrar dados a partir de 28/02/2026 18:00
+    # 4. Ordenar por data e filtrar dados a partir de 28/02/2026 18:00
+    df = df.sort_values('E3TIMESTAMP').reset_index(drop=True)
     df = df[df['E3TIMESTAMP'] >= DATA_INICIO].reset_index(drop=True)
     print(f"  Linhas apos filtro de data: {len(df)}")
     if len(df) > 0:
         print(f"  Periodo: {df['E3TIMESTAMP'].min()} ate {df['E3TIMESTAMP'].max()}")
 
-    # 5. Salvar como .xlsx
+    # 5. Salvar como .xlsx — formatar E3TIMESTAMP como string para garantir leitura correta
+    df['E3TIMESTAMP'] = df['E3TIMESTAMP'].dt.strftime('%Y-%m-%d %H:%M:%S')
     saida = f'tratamento_de_dados/{nome}_filtrado.xlsx'
     df.to_excel(saida, index=False)
     print(f"  Arquivo salvo: {saida}")
