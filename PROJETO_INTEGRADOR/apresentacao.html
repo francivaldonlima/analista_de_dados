@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Projeto Integrador — Previsão de Nível UTR-221</title>
+<title>Projeto Integrador — Previsão de Pressão UTR-221</title>
 <style>
   /* ===== RESET & BASE ===== */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -239,12 +239,12 @@
       <div class="capa-inner">
         <div class="capa-projeto">Projeto Integrador — Machine Learning</div>
         <h1 class="capa-titulo">
-          Previsão de Nível de Reservatório
+          Previsão de Pressão de Rede
           <span>com Machine Learning</span>
         </h1>
         <p class="capa-subtitulo">
-          Modelo preditivo baseado em Random Forest para antecipar o nível do reservatório da UTR-221,
-          garantindo continuidade operacional mesmo em falhas de comunicação.
+          Modelo preditivo baseado em Random Forest para antecipar a pressão da UTR-221 (1 minuto à frente),
+          garantindo continuidade operacional mesmo durante falhas de comunicação SCADA.
         </p>
         <div class="capa-divisor"></div>
         <div class="capa-info">
@@ -258,7 +258,7 @@
           </div>
           <div class="capa-info-item">
             <div class="label">Data</div>
-            <div class="valor">Março / 2026</div>
+            <div class="valor">06 de Abril de 2026</div>
           </div>
         </div>
       </div>
@@ -287,25 +287,25 @@
 
       <div class="destaque-box mt8">
         <span class="negrito ciano-txt">Fato impactante:</span>
-        Uma falha de comunicação de apenas 1 hora num reservatório de abastecimento pode resultar
-        em desabastecimento urbano ou superenchimento com transbordamento — prejuízos técnicos e financeiros severos.
+        Uma falha de comunicação de apenas 1 hora numa estação de bombeamento pode resultar
+        em pressão insuficiente na rede, interrupção do abastecimento ou dano a equipamentos — prejuízos técnicos e financeiros severos.
       </div>
 
       <div class="grid2 mt16" style="flex:1; align-items:start;">
         <div>
           <div class="card-titulo ciano-txt mt8">Contexto</div>
           <ul class="lista mt8">
-            <li>Setor de saneamento / abastecimento de água</li>
-            <li>Dois reservatórios interligados monitorados por unidades remotas: <span class="ciano-txt">UTR-220</span> e <span class="ciano-txt">UTR-221</span></li>
-            <li>Dados coletados em tempo real: nível (metros), status das bombas, timestamps de milissegundo</li>
+            <li>Setor de saneamento / abastecimento de água (CAGECE)</li>
+            <li>Dois pontos de monitoramento interligados por unidades remotas: <span class="ciano-txt">UTR-220</span> e <span class="ciano-txt">UTR-221</span></li>
+            <li>Dados coletados em tempo real via sistema SCADA: pressão (BAR), nível (m), vazão (m³/h), timestamps</li>
           </ul>
         </div>
         <div>
           <div class="card-titulo ciano-txt mt8">O Problema</div>
           <ul class="lista mt8">
-            <li>Quando a UTR-221 perde comunicação, o operador fica <span class="amarelo-txt negrito">cego</span> — não sabe o nível do reservatório</li>
-            <li>Decisões manuais baseadas em estimativas resultam em erros operacionais</li>
-            <li>Não há mecanismo automático de previsão futura do nível</li>
+            <li>Quando a UTR-221 perde comunicação, o operador fica <span class="amarelo-txt negrito">cego</span> — não sabe a pressão de saída da estação</li>
+            <li>Decisões manuais baseadas em estimativas resultam em erros operacionais e risco de colapso de pressão</li>
+            <li>Não há mecanismo automático de previsão da pressão durante falhas de comunicação</li>
           </ul>
         </div>
       </div>
@@ -313,7 +313,7 @@
       <div class="destaque-box verde mt16">
         <span class="negrito verde-txt">Relevância:</span>
         Operadores, gestores de infraestrutura e a população abastecida se beneficiam diretamente.
-        O modelo entrega <span class="negrito">resiliência operacional</span> contra falhas de sensor.
+        O modelo entrega <span class="negrito">resiliência operacional</span> — mesmo sem sinal do sensor, a pressão é prevista com 99,71% de acurácia.
       </div>
     </div>
     <div class="rodape">
@@ -351,10 +351,10 @@
         <div class="card">
           <div class="card-titulo">Descrição dos Dados</div>
           <ul class="lista mt8">
-            <li>Período: a partir de <span class="ciano-txt">28/fev/2026 às 17:30</span></li>
-            <li>Granularidade original: leituras irregulares (segundos)</li>
-            <li>Após reamostragem: <span class="ciano-txt">1 ponto por minuto</span></li>
-            <li>Variáveis: timestamp, nível UTR-220, nível UTR-221, status Bomba 1, status Bomba 2</li>
+            <li>Período: a partir de <span class="ciano-txt">28/fev/2026 às 18:00</span></li>
+            <li>Granularidade original: leituras a cada ~1 minuto</li>
+            <li>UTR-220: <span class="ciano-txt">85 variáveis</span> (pressão, nível, status de bombas, alarmes)</li>
+            <li>UTR-221: <span class="ciano-txt">9 variáveis</span> (pressão PIT, nível LIT, vazão FIT + qualidade)</li>
           </ul>
         </div>
         <div class="card">
@@ -376,14 +376,14 @@
             <div class="desc">UTR-220 + UTR-221</div>
           </div>
           <div class="card-metrica">
-            <div class="valor">5</div>
+            <div class="valor">94</div>
             <div class="label">Variáveis brutas</div>
-            <div class="desc">timestamp, nível, 2 bombas</div>
+            <div class="desc">85 (UTR-220) + 9 (UTR-221)</div>
           </div>
           <div class="card-metrica destaque">
-            <div class="valor">8</div>
-            <div class="label">Features finais</div>
-            <div class="desc">após engenharia de features</div>
+            <div class="valor">36 k</div>
+            <div class="label">Registros filtrados</div>
+            <div class="desc">a partir de 28/02/2026 18:00</div>
           </div>
           <div class="card-metrica">
             <div class="valor">1 min</div>
@@ -421,7 +421,7 @@
           <ul class="lista mt12">
             <li>
               <div>
-                <span class="negrito ciano-txt">P1:</span> É possível prever com precisão o nível do reservatório UTR-221 do próximo minuto usando apenas dados históricos e de sensores da UTR-220?
+                <span class="negrito ciano-txt">P1:</span> É possível prever com precisão a pressão da UTR-221 do próximo minuto usando apenas dados históricos e de sensores da UTR-220?
               </div>
             </li>
             <li>
@@ -442,7 +442,7 @@
             <li>
               <div>
                 <span class="badge badge-ciano">Modelo Preditivo</span><br>
-                <span class="mt8" style="display:block">Random Forest treinado para prever o nível 1 minuto à frente, com acurácia superior a 98%</span>
+                <span class="mt8" style="display:block">Random Forest (200 árvores) treinado para prever a <strong>pressão PIT_221_S01_000</strong> 1 minuto à frente, com acurácia de 99,71%</span>
               </div>
             </li>
             <li>
@@ -470,7 +470,7 @@
             <li><span class="negrito">Features mistas:</span> binárias, contínuas e cíclicas sem necessidade de normalização</li>
           </ul>
           <ul class="lista" style="font-size:.82rem;">
-            <li><span class="negrito">Robusto a ruídos:</span> média de 100 árvores neutraliza outliers industriais</li>
+            <li><span class="negrito">Robusto a ruídos:</span> média de 200 árvores neutraliza outliers industriais</li>
             <li><span class="negrito">Importância nativa:</span> <code>feature_importances_</code> mostra o peso de cada variável sem código extra</li>
             <li><span class="negrito">Baixo overfitting:</span> cada árvore treina em amostras diferentes — generaliza melhor</li>
           </ul>
@@ -528,7 +528,7 @@
         <div class="step">
           <div class="step-icon">🤖</div>
           <div class="step-label">Treino</div>
-          <div class="step-desc">Random Forest 100 árvores (80/20 temporal)</div>
+          <div class="step-desc">Random Forest 200 árvores (80/20 temporal)</div>
         </div>
         <div class="seta">›</div>
         <div class="step">
@@ -585,10 +585,14 @@
           evitando que dados futuros "contaminem" o treinamento e gerem métricas falsamente otimistas.
         </div>
         <div class="destaque-box verde">
-          <span class="negrito verde-txt">Repositório GitHub:</span><br>
+          <span class="negrito verde-txt">Repositórios GitHub:</span><br>
           <a href="https://github.com/LEUDOLOIOLA/Integrador" target="_blank"
              style="color:var(--ciano); font-weight:700; word-break:break-all;">
             github.com/LEUDOLOIOLA/Integrador
+          </a><br>
+          <a href="https://github.com/francivaldonlima/analista_de_dados" target="_blank"
+             style="color:var(--ciano); font-weight:700; word-break:break-all;">
+            github.com/francivaldonlima/analista_de_dados
           </a>
         </div>
       </div>
@@ -620,15 +624,15 @@
         <div>
           <div class="card-titulo ciano-txt">Importância das Features (Random Forest)</div>
           <div class="mt12">
-            <div class="feat-row"><span class="feat-nome">nivel_221_lag1</span><div class="feat-barra-bg"><div class="feat-barra" style="width:72%"></div></div><span class="feat-val">~0.72</span></div>
+            <div class="feat-row"><span class="feat-nome">pressao_221_lag1</span><div class="feat-barra-bg"><div class="feat-barra" style="width:72%"></div></div><span class="feat-val">~0.72</span></div>
             <div class="feat-row"><span class="feat-nome">media_movel_1h</span><div class="feat-barra-bg"><div class="feat-barra" style="width:12%"></div></div><span class="feat-val">~0.12</span></div>
             <div class="feat-row"><span class="feat-nome">tendencia_1h</span><div class="feat-barra-bg"><div class="feat-barra" style="width:7%"></div></div><span class="feat-val">~0.07</span></div>
             <div class="feat-row"><span class="feat-nome">tendencia_1min</span><div class="feat-barra-bg"><div class="feat-barra" style="width:4%"></div></div><span class="feat-val">~0.04</span></div>
-            <div class="feat-row"><span class="feat-nome">nivel_220_lag1</span><div class="feat-barra-bg"><div class="feat-barra" style="width:3%"></div></div><span class="feat-val">~0.03</span></div>
-            <div class="feat-row"><span class="feat-nome">BOMBA_1 / BOMBA_2</span><div class="feat-barra-bg"><div class="feat-barra" style="width:2%"></div></div><span class="feat-val">~0.02</span></div>
+            <div class="feat-row"><span class="feat-nome">pressao_220_lag1</span><div class="feat-barra-bg"><div class="feat-barra" style="width:3%"></div></div><span class="feat-val">~0.03</span></div>
+            <div class="feat-row"><span class="feat-nome">nivel / vazao / hora</span><div class="feat-barra-bg"><div class="feat-barra" style="width:2%"></div></div><span class="feat-val">~0.02</span></div>
           </div>
           <div class="destaque-box mt12" style="font-size:.82rem;">
-            O nível do minuto anterior domina a previsão — o que é fisicamente correto: reservatórios mudam lentamente.
+            A pressão do minuto anterior domina a previsão — fisicamente correto: redes de pressão variam lentamente e com forte autocorrelação.
           </div>
         </div>
 
@@ -637,19 +641,19 @@
           <div class="card-titulo ciano-txt">Engenharia de Features Criadas</div>
           <table class="tabela mt12">
             <tr><th>Feature</th><th>O que representa</th></tr>
-            <tr><td>nivel_221_lag1</td><td>Nível 1 min atrás</td></tr>
-            <tr><td>nivel_220_lag1</td><td>Nível UTR-220 1 min atrás</td></tr>
-            <tr><td>tendencia_1min</td><td>Variação no último minuto</td></tr>
-            <tr><td>tendencia_1h</td><td>Variação na última hora</td></tr>
-            <tr><td>media_movel_1h</td><td>Média dos últimos 60 min</td></tr>
-            <tr><td>hora</td><td>Hora do dia (padrão diário)</td></tr>
-            <tr><td>BOMBA_1/2</td><td>Status das bombas (0 ou 1)</td></tr>
+            <tr><td>pressao_221_lag1</td><td>Pressão (BAR) 1 min atrás</td></tr>
+            <tr><td>pressao_220_lag1</td><td>Pressão UTR-220 1 min atrás</td></tr>
+            <tr><td>tendencia_1min</td><td>Variação de pressão no último minuto</td></tr>
+            <tr><td>tendencia_1h</td><td>Variação de pressão na última hora</td></tr>
+            <tr><td>media_movel_1h</td><td>Média de pressão dos últimos 60 min</td></tr>
+            <tr><td>hora</td><td>Hora do dia (padrão operacional diário)</td></tr>
+            <tr><td>nivel / vazao</td><td>LIT e FIT da UTR-221 (variáveis auxiliares)</td></tr>
           </table>
 
           <div class="destaque-box amarelo mt12" style="font-size:.82rem;">
             <span class="negrito amarelo-txt">Decisão:</span>
-            Períodos com nível=0 (DF3) foram <span class="negrito">removidos do treinamento</span>
-            (DF2) para evitar que o modelo aprenda o padrão de falha como normal.
+            Leituras com QUALITY=0 (sinal ruim do SCADA) foram <span class="negrito">removidas do treinamento</span>
+            para evitar que o modelo aprenda padrões de falha de comunicação como normais.
           </div>
         </div>
       </div>
@@ -679,29 +683,29 @@
       <!-- Métricas -->
       <div class="cards mt8">
         <div class="card-metrica destaque">
-          <div class="valor">&gt;98%</div>
+          <div class="valor">99,71%</div>
           <div class="label">Acurácia</div>
           <div class="desc">100 - MAPE no teste</div>
         </div>
-        <div class="card-metrica destaque">
-          <div class="valor">~0.99</div>
+        <div class="card-metrica alerta">
+          <div class="valor">0,8966</div>
           <div class="label">R²</div>
           <div class="desc">Coef. determinação</div>
         </div>
-        <div class="card-metrica alerta">
-          <div class="valor">&lt;0.05m</div>
-          <div class="label">MAE</div>
+        <div class="card-metrica destaque">
+          <div class="valor">0,0039</div>
+          <div class="label">MAE (BAR)</div>
           <div class="desc">Erro médio absoluto</div>
         </div>
         <div class="card-metrica destaque">
-          <div class="valor">7h</div>
-          <div class="label">Horizonte futuro</div>
-          <div class="desc">420 passos recursivos</div>
+          <div class="valor">0,0255</div>
+          <div class="label">RMSE (BAR)</div>
+          <div class="desc">Raiz do erro quadrático</div>
         </div>
         <div class="card-metrica">
-          <div class="valor">6</div>
-          <div class="label">Arquivos gerados</div>
-          <div class="desc">DF1 → DF6 em Excel</div>
+          <div class="valor">0,29%</div>
+          <div class="label">MAPE</div>
+          <div class="desc">Erro percentual médio</div>
         </div>
       </div>
 
@@ -711,21 +715,21 @@
           <div class="card-titulo"><span class="badge badge-ciano">Cenário 1</span></div>
           <div class="card-corpo mt6" style="font-size:.82rem;">
             <span class="negrito">Validação no conjunto de teste</span><br>
-            80% treino → 20% teste (temporal). Janela aleatória de 12h com real vs previsto sobrepostos.
+            80% treino → 20% teste (temporal). Curva real vs prevista sobrepostas — praticamente indistinguíveis.
           </div>
         </div>
         <div class="card" style="padding:12px 14px;">
           <div class="card-titulo"><span class="badge badge-amarelo">Cenário 2</span></div>
           <div class="card-corpo mt6" style="font-size:.82rem;">
-            <span class="negrito">Falha simulada (06/mar 06:42-07:42)</span><br>
-            Previsão recursiva de 60 min sem ver o sensor real. Área sombreada = período sem sinal.
+            <span class="negrito">Simulação de falha de comunicação</span><br>
+            Previsão recursiva (feed-forward) durante o período simulado de falha. Área sombreada = sem sinal SCADA.
           </div>
         </div>
         <div class="card" style="padding:12px 14px;">
           <div class="card-titulo"><span class="badge badge-verde">Cenário 3</span></div>
           <div class="card-corpo mt6" style="font-size:.82rem;">
-            <span class="negrito">Previsão futura — 7 horas</span><br>
-            420 minutos projetados a partir do último timestamp, com estado fixo de bombas e UTR-220.
+            <span class="negrito">Dashboard interativo (Streamlit)</span><br>
+            O operador define o período de falha — o modelo prevê a pressão minuto a minuto e exibe o gráfico em tempo real.
           </div>
         </div>
       </div>
@@ -857,11 +861,11 @@
         <div>
           <div class="card-titulo ciano-txt">Principais Conclusões</div>
           <ul class="lista mt12">
-            <li>Random Forest com engenharia de features temporais atingiu <span class="verde-txt negrito">acurácia superior a 98%</span> na previsão minuto a minuto do nível da UTR-221</li>
-            <li>O modelo é capaz de <span class="ciano-txt negrito">substituir o sensor</span> durante falhas de comunicação com erro inferior a 5cm <span class="verde-txt negrito">e durante no máximo 3 horas</span></li>
-            <li>A abordagem <span class="negrito">recursiva (feed-forward)</span> funciona bem para horizontes de até 3h — erros crescem gradualmente em horizontes maiores não testados</li>
-            <li>A separação de dados por <span class="negrito">zero vs não-zero</span> foi decisiva para a qualidade do modelo</li>
-            <li>Features de tendência (1min e 1h) melhoram a previsão em pontos de inflexão do nível</li>
+            <li>Random Forest (200 árvores) com features temporais atingiu <span class="verde-txt negrito">acurácia de 99,71%</span> na previsão minuto a minuto da pressão da UTR-221</li>
+            <li>O modelo é capaz de <span class="ciano-txt negrito">substituir o sensor</span> durante falhas de comunicação com erro médio de apenas <span class="verde-txt negrito">0,0039 BAR</span></li>
+            <li>A abordagem <span class="negrito">recursiva (feed-forward)</span> funciona bem para horizontes de falha — o dashboard permite simular qualquer período definido pelo operador</li>
+            <li>Remoção de leituras com <span class="negrito">QUALITY=0</span> (sinal ruim do SCADA) foi decisiva para a qualidade do modelo</li>
+            <li>Features de tendência (1min e 1h) melhoram a previsão em pontos de variação brusca de pressão</li>
           </ul>
         </div>
         <div>
@@ -881,8 +885,8 @@
             </li>
             <li>
               <div>
-                <span class="badge badge-amarelo">Dashboard</span><br>
-                <span style="display:block;margin-top:4px;">Criar painel interativo (Streamlit ou Power BI) com gráficos ao vivo e indicadores de confiança</span>
+                <span class="badge badge-amarelo">Deploy do Dashboard</span><br>
+                <span style="display:block;margin-top:4px;">Publicar o dashboard Streamlit (já construído) em nuvem para acesso remoto pelos operadores da CAGECE</span>
               </div>
             </li>
             <li>
@@ -896,8 +900,8 @@
       </div>
 
       <div class="destaque-box verde mt12" style="text-align:center; font-size:1rem;">
-        <span class="verde-txt negrito">Machine Learning provou ser uma ferramenta viável para garantir resiliência operacional
-        em sistemas de abastecimento — mesmo quando os sensores falham, o modelo mantém o operador informado.</span>
+        <span class="verde-txt negrito">Com 99,71% de acurácia e MAE de 0,0039 BAR, Machine Learning provou ser uma ferramenta viável
+        para garantir resiliência operacional em sistemas de abastecimento — mesmo quando o SCADA falha, o modelo mantém o operador informado.</span>
       </div>
 
       <div class="mt12" style="text-align:center; border-top: 1px solid rgba(6,182,212,.25); padding-top:12px;">
