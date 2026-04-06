@@ -1,0 +1,49 @@
+================================================================
+  MANUAL DO PROJETO — UTR-221 PREVISÃO DE PRESSÃO COM ML
+================================================================
+
+CONTEÚDO DESTA PASTA
+--------------------
+  index.html              → Apresentação em slides (abrir no navegador)
+  tratar_dados.py         → Script de limpeza e imputação (bem comentado)
+  treinar_modelo.py       → Script de treinamento do modelo (bem comentado)
+  UTR221_ML_validacao.py  → Script de validação científica (bem comentado)
+  dashboard_utr221.py     → Aplicação Streamlit (bem comentado)
+  LEIA-ME.txt             → Este arquivo
+
+COMO VER A APRESENTAÇÃO
+------------------------
+  Abra o arquivo index.html diretamente no navegador
+  (duplo clique no arquivo).
+
+  Navegação:
+    → ou Espaço       : próximo slide
+    ←                 : slide anterior
+    F                 : tela cheia
+    Esc               : sair da tela cheia
+    S                 : notas do apresentador
+
+ORDEM DE EXECUÇÃO DOS SCRIPTS
+-------------------------------
+  Os arquivos comentados nesta pasta são cópias de referência.
+  Para executar, use os arquivos na pasta principal (ML APP):
+
+  1. python tratar_dados.py          (opcional — dados já tratados)
+  2. python treinar_modelo.py        (obrigatório antes do dashboard)
+  3. python -m streamlit run dashboard_utr221.py   (abre o dashboard)
+  4. python UTR221_ML_validacao.py   (análise científica — opcional)
+
+MÉTRICAS DO MODELO (1 minuto à frente)
+----------------------------------------
+  Acurácia : 99,71%
+  MAE      : 0,0039 BAR
+  RMSE     : 0,0255 BAR
+  R²       : 0,8966
+  MAPE     : 0,29%
+
+TECNOLOGIAS
+-----------
+  Python 3.13 · Pandas · NumPy · Scikit-Learn
+  Matplotlib · Streamlit · Joblib · OpenPyXL
+
+================================================================

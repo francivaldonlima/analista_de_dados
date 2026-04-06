@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Projeto Integrador — Previsão de Nível UTR-221</title>
+<style>
+  /* ===== RESET & BASE ===== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --azul-escuro:  #0a1628;
+    --azul-medio:   #1a3a5c;
+    --azul-claro:   #2563eb;
+    --azul-brilho:  #3b82f6;
+    --ciano:        #06b6d4;
+    --verde:        #10b981;
+    --amarelo:      #f59e0b;
+    --vermelho:     #ef4444;
+    --cinza-claro:  #e2e8f0;
+    --cinza-medio:  #94a3b8;
+    --branco:       #ffffff;
+    --fonte-titulo: 'Segoe UI', system-ui, sans-serif;
+  }
+
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: var(--fonte-titulo); }
+
+  /* ===== SLIDER ===== */
+  .slider { width: 100vw; height: 100vh; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    opacity: 0; pointer-events: none;
+    transition: opacity .5s ease;
+    overflow: hidden;
+  }
+  .slide.ativo { opacity: 1; pointer-events: auto; }
+
+  /* ===== FUNDO PADRÃO ===== */
+  .slide-fundo-escuro { background: linear-gradient(135deg, var(--azul-escuro) 0%, #0d2240 60%, #091320 100%); color: var(--branco); }
+  .slide-fundo-claro  { background: linear-gradient(135deg, #f0f7ff 0%, #e1effe 100%); color: var(--azul-escuro); }
+
+  /* grade decorativa */
+  .grade {
+    position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(37,99,235,.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(37,99,235,.08) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* brilho de canto */
+  .brilho-canto {
+    position: absolute; width: 500px; height: 500px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(6,182,212,.15) 0%, transparent 70%);
+    pointer-events: none; z-index: 0;
+  }
+  .brilho-canto.tl { top: -150px; left: -150px; }
+  .brilho-canto.br { bottom: -150px; right: -150px; background: radial-gradient(circle, rgba(37,99,235,.18) 0%, transparent 70%); }
+
+  /* ===== CONTEÚDO ===== */
+  .conteudo { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column; padding: 3vw 5vw; }
+
+  /* ===== HEADER de slide ===== */
+  .slide-header {
+    display: flex; align-items: center; gap: 16px;
+    border-bottom: 2px solid rgba(6,182,212,.4);
+    padding-bottom: 14px; margin-bottom: 28px;
+  }
+  .slide-numero {
+    background: linear-gradient(135deg, var(--ciano), var(--azul-brilho));
+    color: #fff; font-weight: 900; font-size: 1rem;
+    width: 38px; height: 38px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .slide-titulo { font-size: clamp(1.3rem, 2.8vw, 2rem); font-weight: 700; color: var(--ciano); }
+  .slide-subtitulo { font-size: clamp(.75rem, 1.4vw, 1rem); color: var(--cinza-medio); margin-top: 3px; }
+
+  /* ===== RODAPÉ ===== */
+  .rodape {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 5vw; border-top: 1px solid rgba(255,255,255,.1);
+    font-size: .75rem; color: var(--cinza-medio);
+    position: relative; z-index: 1;
+  }
+  .rodape-logo { font-weight: 700; color: var(--ciano); letter-spacing: 1px; }
+  .progress-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--ciano), var(--azul-brilho)); transition: width .4s; }
+
+  /* ===== BULLET LIST ===== */
+  .lista { list-style: none; display: flex; flex-direction: column; gap: 12px; text-align: left; }
+  .lista li {
+    display: flex; align-items: flex-start; gap: 12px;
+    font-size: clamp(.85rem, 1.6vw, 1.05rem); line-height: 1.5;
+  }
+  .lista li::before {
+    content: ''; flex-shrink: 0; margin-top: 8px;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--ciano), var(--azul-brilho));
+  }
+  .lista.sub { margin-top: 6px; margin-left: 20px; }
+  .lista.sub li::before { background: var(--amarelo); width: 6px; height: 6px; }
+
+  /* ===== CARDS ===== */
+  .cards { display: flex; gap: 16px; flex-wrap: wrap; }
+  .card {
+    flex: 1; min-width: 180px;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(6,182,212,.25);
+    border-radius: 12px; padding: 20px 18px;
+    backdrop-filter: blur(4px);
+    text-align: left;
+  }
+  .card-titulo { font-size: .85rem; color: var(--ciano); font-weight: 700; text-transform: uppercase; letter-spacing: .8px; margin-bottom: 8px; text-align: left; }
+  .card-corpo { font-size: clamp(.8rem, 1.4vw, .95rem); line-height: 1.55; text-align: left; }
+
+  /* card de métrica */
+  .card-metrica {
+    flex: 1; min-width: 140px; text-align: center;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(6,182,212,.3);
+    border-radius: 12px; padding: 18px 12px;
+  }
+  .card-metrica .valor { font-size: clamp(1.6rem, 3.5vw, 2.4rem); font-weight: 900; color: var(--ciano); }
+  .card-metrica .label { font-size: .78rem; color: var(--cinza-medio); margin-top: 4px; }
+  .card-metrica .desc  { font-size: .72rem; color: var(--cinza-medio); margin-top: 2px; }
+  .card-metrica.destaque .valor { color: var(--verde); }
+  .card-metrica.alerta  .valor { color: var(--amarelo); }
+
+  /* ===== BADGE de tag ===== */
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: .75rem; font-weight: 700; letter-spacing: .5px;
+  }
+  .badge-ciano   { background: rgba(6,182,212,.2);  color: var(--ciano); border: 1px solid var(--ciano); }
+  .badge-verde   { background: rgba(16,185,129,.2); color: var(--verde); border: 1px solid var(--verde); }
+  .badge-amarelo { background: rgba(245,158,11,.2); color: var(--amarelo); border: 1px solid var(--amarelo); }
+  .badge-vermelho{ background: rgba(239,68,68,.2);  color: var(--vermelho); border: 1px solid var(--vermelho); }
+
+  /* ===== FLOW STEPS ===== */
+  .steps { display: flex; align-items: center; gap: 0; flex-wrap: wrap; }
+  .step {
+    flex: 1; min-width: 120px; text-align: center;
+    background: rgba(255,255,255,.05); border: 1px solid rgba(6,182,212,.25);
+    border-radius: 10px; padding: 14px 10px; font-size: clamp(.75rem, 1.2vw, .88rem);
+    position: relative;
+  }
+  .step-icon { font-size: 1.6rem; margin-bottom: 6px; }
+  .step-label { font-weight: 700; color: var(--ciano); font-size: .8rem; }
+  .step-desc { color: var(--cinza-medio); font-size: .73rem; margin-top: 4px; }
+  .seta { color: var(--ciano); font-size: 1.5rem; padding: 0 4px; flex-shrink: 0; }
+
+  /* ===== TABELA ===== */
+  .tabela { width: 100%; border-collapse: collapse; font-size: clamp(.78rem, 1.3vw, .92rem); }
+  .tabela th { background: rgba(6,182,212,.2); color: var(--ciano); font-weight: 700; padding: 10px 14px; text-align: left; border-bottom: 2px solid var(--ciano); }
+  .tabela td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,.07); }
+  .tabela tr:hover td { background: rgba(255,255,255,.04); }
+
+  /* ===== BARRA DE IMPORTÂNCIA ===== */
+  .feat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: clamp(.78rem, 1.3vw, .9rem); }
+  .feat-nome { width: 170px; flex-shrink: 0; }
+  .feat-barra-bg { flex: 1; background: rgba(255,255,255,.1); border-radius: 4px; height: 10px; overflow: hidden; }
+  .feat-barra { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--ciano), var(--azul-brilho)); }
+  .feat-val { width: 50px; text-align: right; color: var(--ciano); font-weight: 700; }
+
+  /* ===== CAPA ===== */
+  #slide-capa { background: linear-gradient(135deg, #020c1b 0%, #0a1628 40%, #0d2850 100%); }
+  .capa-inner { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 20px; }
+  .capa-projeto { font-size: clamp(.8rem, 1.5vw, 1rem); color: var(--ciano); text-transform: uppercase; letter-spacing: 3px; font-weight: 600; }
+  .capa-titulo  { font-size: clamp(2rem, 5vw, 3.6rem); font-weight: 900; line-height: 1.1; }
+  .capa-titulo span { display: block; background: linear-gradient(90deg, var(--ciano), var(--azul-brilho)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .capa-subtitulo { font-size: clamp(.9rem, 1.8vw, 1.2rem); color: var(--cinza-medio); max-width: 680px; }
+  .capa-divisor { width: 80px; height: 3px; background: linear-gradient(90deg, var(--ciano), var(--azul-brilho)); border-radius: 2px; }
+  .capa-info { display: flex; gap: 40px; flex-wrap: wrap; justify-content: center; }
+  .capa-info-item { text-align: center; }
+  .capa-info-item .label { font-size: .75rem; color: var(--cinza-medio); text-transform: uppercase; letter-spacing: 1px; }
+  .capa-info-item .valor { font-size: clamp(.9rem, 1.6vw, 1.05rem); font-weight: 700; color: var(--branco); margin-top: 4px; }
+
+  /* ===== NAVEGAÇÃO ===== */
+  .nav {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 12px; z-index: 999;
+    background: rgba(10,22,40,.85); backdrop-filter: blur(10px);
+    border: 1px solid rgba(6,182,212,.3); border-radius: 40px;
+    padding: 8px 20px;
+  }
+  .nav-btn {
+    background: rgba(37,99,235,.3); border: 1px solid rgba(37,99,235,.5);
+    color: #fff; padding: 6px 18px; border-radius: 24px; cursor: pointer;
+    font-size: .85rem; font-weight: 600; transition: all .2s;
+  }
+  .nav-btn:hover { background: var(--azul-brilho); border-color: var(--azul-brilho); }
+  .nav-info { font-size: .8rem; color: var(--cinza-medio); min-width: 70px; text-align: center; }
+
+  /* indicadores */
+  .indicadores { display: flex; gap: 6px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.2); cursor: pointer; transition: all .2s; }
+  .dot.ativo { background: var(--ciano); transform: scale(1.3); }
+
+  /* tecla dica */
+  .tecla-dica { position: fixed; top: 16px; right: 20px; font-size: .72rem; color: rgba(255,255,255,.3); z-index: 999; }
+
+  /* highlight box */
+  .destaque-box {
+    background: rgba(6,182,212,.1); border-left: 4px solid var(--ciano);
+    border-radius: 0 8px 8px 0; padding: 12px 16px;
+    font-size: clamp(.8rem, 1.4vw, .95rem); line-height: 1.5;
+    text-align: left;
+  }
+  .destaque-box.verde  { background: rgba(16,185,129,.1); border-color: var(--verde); }
+  .destaque-box.amarelo{ background: rgba(245,158,11,.1); border-color: var(--amarelo); }
+  .destaque-box.vermelho{ background: rgba(239,68,68,.1); border-color: var(--vermelho); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  .mt8  { margin-top: 8px; }
+  .mt12 { margin-top: 12px; }
+  .mt16 { margin-top: 16px; }
+  .mt20 { margin-top: 20px; }
+  .negrito { font-weight: 700; }
+  .ciano-txt { color: var(--ciano); }
+  .verde-txt  { color: var(--verde); }
+  .amarelo-txt{ color: var(--amarelo); }
+</style>
+</head>
+<body>
+
+<div class="slider">
+
+  <!-- ============================================================
+       SLIDE 1 — CAPA
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro ativo" id="slide-capa">
+    <div class="grade"></div>
+    <div class="brilho-canto tl"></div>
+    <div class="brilho-canto br"></div>
+    <div class="conteudo">
+      <div class="capa-inner">
+        <div class="capa-projeto">Projeto Integrador — Machine Learning</div>
+        <h1 class="capa-titulo">
+          Previsão de Nível de Reservatório
+          <span>com Machine Learning</span>
+        </h1>
+        <p class="capa-subtitulo">
+          Modelo preditivo baseado em Random Forest para antecipar o nível do reservatório da UTR-221,
+          garantindo continuidade operacional mesmo em falhas de comunicação.
+        </p>
+        <div class="capa-divisor"></div>
+        <div class="capa-info">
+          <div class="capa-info-item">
+            <div class="label">Alunos</div>
+            <div class="valor">Francivaldo &amp; Leudo Loiola</div>
+          </div>
+          <div class="capa-info-item">
+            <div class="label">Turma / Curso</div>
+            <div class="valor">Machine Learning — Integrador</div>
+          </div>
+          <div class="capa-info-item">
+            <div class="label">Data</div>
+            <div class="valor">Março / 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Projeto Integrador · 2026</span>
+      <div class="progress-bar" style="width:11.1%"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE 2 — CONTEXTUALIZAÇÃO E PROBLEMA
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro">
+    <div class="grade"></div>
+    <div class="brilho-canto tl"></div>
+    <div class="conteudo">
+      <div class="slide-header">
+        <div class="slide-numero">2</div>
+        <div>
+          <div class="slide-titulo">Contextualização e Problema</div>
+          <div class="slide-subtitulo">Cenário real e relevância do trabalho</div>
+        </div>
+      </div>
+
+      <div class="destaque-box mt8">
+        <span class="negrito ciano-txt">Fato impactante:</span>
+        Uma falha de comunicação de apenas 1 hora num reservatório de abastecimento pode resultar
+        em desabastecimento urbano ou superenchimento com transbordamento — prejuízos técnicos e financeiros severos.
+      </div>
+
+      <div class="grid2 mt16" style="flex:1; align-items:start;">
+        <div>
+          <div class="card-titulo ciano-txt mt8">Contexto</div>
+          <ul class="lista mt8">
+            <li>Setor de saneamento / abastecimento de água</li>
+            <li>Dois reservatórios interligados monitorados por unidades remotas: <span class="ciano-txt">UTR-220</span> e <span class="ciano-txt">UTR-221</span></li>
+            <li>Dados coletados em tempo real: nível (metros), status das bombas, timestamps de milissegundo</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card-titulo ciano-txt mt8">O Problema</div>
+          <ul class="lista mt8">
+            <li>Quando a UTR-221 perde comunicação, o operador fica <span class="amarelo-txt negrito">cego</span> — não sabe o nível do reservatório</li>
+            <li>Decisões manuais baseadas em estimativas resultam em erros operacionais</li>
+            <li>Não há mecanismo automático de previsão futura do nível</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="destaque-box verde mt16">
+        <span class="negrito verde-txt">Relevância:</span>
+        Operadores, gestores de infraestrutura e a população abastecida se beneficiam diretamente.
+        O modelo entrega <span class="negrito">resiliência operacional</span> contra falhas de sensor.
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Slide 2 de 9</span>
+      <div class="progress-bar" style="width:22.2%"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE 3 — ORIGEM DOS DADOS E ASPECTOS ÉTICOS
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro">
+    <div class="grade"></div>
+    <div class="brilho-canto br"></div>
+    <div class="conteudo">
+      <div class="slide-header">
+        <div class="slide-numero">3</div>
+        <div>
+          <div class="slide-titulo">Origem dos Dados e Aspectos Éticos</div>
+          <div class="slide-subtitulo">Transparência sobre fontes e LGPD</div>
+        </div>
+      </div>
+
+      <div class="grid3 mt8" style="flex:1; align-items:start;">
+        <div class="card">
+          <div class="card-titulo">Fonte dos Dados</div>
+          <ul class="lista mt8">
+            <li>Dados operacionais reais coletados de <span class="ciano-txt negrito">Banco de Dados Oracle</span> via comandos SQL</li>
+            <li>Consultas SQL extraíram séries históricas das tabelas de telemetria do sistema SCADA</li>
+            <li>Dados exportados para <span class="ciano-txt">urt220.xlsx</span> e <span class="ciano-txt">urt221.xlsx</span> para processamento em Python</li>
+            <li>Coletados por instrumentação industrial (PIT — Pressure/Level Indicator Transmitter)</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-titulo">Descrição dos Dados</div>
+          <ul class="lista mt8">
+            <li>Período: a partir de <span class="ciano-txt">28/fev/2026 às 17:30</span></li>
+            <li>Granularidade original: leituras irregulares (segundos)</li>
+            <li>Após reamostragem: <span class="ciano-txt">1 ponto por minuto</span></li>
+            <li>Variáveis: timestamp, nível UTR-220, nível UTR-221, status Bomba 1, status Bomba 2</li>
+          </ul>
+        </div>
+        <div class="card">
+          <div class="card-titulo">Ética e LGPD</div>
+          <ul class="lista mt8">
+            <li>Dados <span class="vermelho-txt negrito" style="color:var(--vermelho)">NÃO são públicos </span> — de uso restrito, fornecidos pela CAGECE para fins acadêmicos</li>
+            <li>Não contêm informações pessoais — exclusivamente leituras de sensores industriais</li>
+            <li>Sem CPFs, nomes, localização de pessoas ou dados sensíveis</li>
+            <li>Sem necessidade de anonimização; uso autorizado e restrito a este projeto</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="mt16">
+        <div class="cards">
+          <div class="card-metrica">
+            <div class="valor">2</div>
+            <div class="label">Fontes de dados</div>
+            <div class="desc">UTR-220 + UTR-221</div>
+          </div>
+          <div class="card-metrica">
+            <div class="valor">5</div>
+            <div class="label">Variáveis brutas</div>
+            <div class="desc">timestamp, nível, 2 bombas</div>
+          </div>
+          <div class="card-metrica destaque">
+            <div class="valor">8</div>
+            <div class="label">Features finais</div>
+            <div class="desc">após engenharia de features</div>
+          </div>
+          <div class="card-metrica">
+            <div class="valor">1 min</div>
+            <div class="label">Granularidade</div>
+            <div class="desc">após resample</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Slide 3 de 9</span>
+      <div class="progress-bar" style="width:33.3%"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE 4 — PERGUNTAS NORTEADORAS / SOLUÇÃO
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro">
+    <div class="grade"></div>
+    <div class="brilho-canto tl"></div>
+    <div class="conteudo">
+      <div class="slide-header">
+        <div class="slide-numero">4</div>
+        <div>
+          <div class="slide-titulo">Perguntas Norteadoras e Solução</div>
+          <div class="slide-subtitulo">Foco da análise e o que foi construído</div>
+        </div>
+      </div>
+
+      <div class="grid2 mt8" style="flex:1; align-items:start;">
+        <div>
+          <div class="card-titulo ciano-txt">Perguntas que guiaram o projeto</div>
+          <ul class="lista mt12">
+            <li>
+              <div>
+                <span class="negrito ciano-txt">P1:</span> É possível prever com precisão o nível do reservatório UTR-221 do próximo minuto usando apenas dados históricos e de sensores da UTR-220?
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="negrito ciano-txt">P2:</span> Como o modelo se comporta durante períodos reais em que o sinal da UTR-221 ficou zerado (falhas passadas)?
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="negrito ciano-txt">P3:</span> Quanto tempo à frente o modelo consegue prever com acurácia aceitável — 1h, 2h, 3h?
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <div class="card-titulo ciano-txt">Solução Desenvolvida</div>
+          <ul class="lista mt12">
+            <li>
+              <div>
+                <span class="badge badge-ciano">Modelo Preditivo</span><br>
+                <span class="mt8" style="display:block">Random Forest treinado para prever o nível 1 minuto à frente, com acurácia superior a 98%</span>
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="badge badge-amarelo">Validação Recursiva</span><br>
+                <span class="mt8" style="display:block">Simulação de períodos de falha real onde a previsão realimenta o próximo passo (sem ver o dado real)</span>
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="badge badge-verde">Previsão Futura</span><br>
+                <span class="mt8" style="display:block">Projeção das próximas 3 horas a partir do último dado disponível</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="destaque-box mt12">
+        <span class="negrito ciano-txt">Por que Random Forest Regressor?</span>
+        <div class="grid2 mt8" style="gap:10px;">
+          <ul class="lista" style="font-size:.82rem;">
+            <li><span class="negrito">Problema de regressão:</span> o alvo é um número contínuo (metros), não uma categoria</li>
+            <li><span class="negrito">Relações não-lineares:</span> bombas (0/1) + tendência + hora interagem de forma complexa — regressão linear não captura</li>
+            <li><span class="negrito">Features mistas:</span> binárias, contínuas e cíclicas sem necessidade de normalização</li>
+          </ul>
+          <ul class="lista" style="font-size:.82rem;">
+            <li><span class="negrito">Robusto a ruídos:</span> média de 100 árvores neutraliza outliers industriais</li>
+            <li><span class="negrito">Importância nativa:</span> <code>feature_importances_</code> mostra o peso de cada variável sem código extra</li>
+            <li><span class="negrito">Baixo overfitting:</span> cada árvore treina em amostras diferentes — generaliza melhor</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="destaque-box verde mt8">
+        <span class="negrito verde-txt">Impacto esperado:</span>
+        Mesmo sem comunicação com a UTR-221, o operador pode confiar no modelo para tomar decisões
+        de acionamento de bombas e prevenção de falhas operacionais.
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Slide 4 de 9</span>
+      <div class="progress-bar" style="width:44.4%"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE 5 — PROCESSO DE TRABALHO E FERRAMENTAS
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro">
+    <div class="grade"></div>
+    <div class="brilho-canto br"></div>
+    <div class="conteudo">
+      <div class="slide-header">
+        <div class="slide-numero">5</div>
+        <div>
+          <div class="slide-titulo">Processo de Trabalho e Ferramentas</div>
+          <div class="slide-subtitulo">Tecnologias, pipeline de dados e organização</div>
+        </div>
+      </div>
+
+      <!-- Pipeline de etapas -->
+      <div class="steps mt8">
+        <div class="step">
+          <div class="step-icon">🗄️</div>
+          <div class="step-label">Coleta</div>
+          <div class="step-desc">Oracle DB via SQL → Excel (urt220 / urt221)</div>
+        </div>
+        <div class="seta">›</div>
+        <div class="step">
+          <div class="step-icon">🧹</div>
+          <div class="step-label">Limpeza</div>
+          <div class="step-desc">Correção de timestamp, dropna, resample 1min</div>
+        </div>
+        <div class="seta">›</div>
+        <div class="step">
+          <div class="step-icon">⚙️</div>
+          <div class="step-label">Features</div>
+          <div class="step-desc">Lags, tendências, médias móveis, hora</div>
+        </div>
+        <div class="seta">›</div>
+        <div class="step">
+          <div class="step-icon">🤖</div>
+          <div class="step-label">Treino</div>
+          <div class="step-desc">Random Forest 100 árvores (80/20 temporal)</div>
+        </div>
+        <div class="seta">›</div>
+        <div class="step">
+          <div class="step-icon">📊</div>
+          <div class="step-label">Avaliação</div>
+          <div class="step-desc">MAE, RMSE, R², MAPE, Acurácia</div>
+        </div>
+        <div class="seta">›</div>
+        <div class="step">
+          <div class="step-icon">📤</div>
+          <div class="step-label">Exportação</div>
+          <div class="step-desc">6 planilhas Excel + 3 gráficos PNG</div>
+        </div>
+      </div>
+
+      <!-- Ferramentas -->
+      <div class="mt16">
+        <div class="card-titulo ciano-txt">Ferramentas Utilizadas</div>
+        <div class="cards mt12">
+          <div class="card" style="flex:none; width:auto; padding:12px 16px;">
+            <div class="card-titulo">Linguagem</div>
+            <div class="card-corpo"><span class="badge badge-ciano">Python 3</span></div>
+          </div>
+          <div class="card" style="flex:none; width:auto; padding:12px 16px;">
+            <div class="card-titulo">Dados</div>
+            <div class="card-corpo">
+              <span class="badge badge-ciano">Pandas</span>&nbsp;
+              <span class="badge badge-ciano">NumPy</span>&nbsp;
+              <span class="badge badge-ciano">OpenPyXL</span>
+            </div>
+          </div>
+          <div class="card" style="flex:none; width:auto; padding:12px 16px;">
+            <div class="card-titulo">ML</div>
+            <div class="card-corpo"><span class="badge badge-verde">Scikit-learn</span></div>
+          </div>
+          <div class="card" style="flex:none; width:auto; padding:12px 16px;">
+            <div class="card-titulo">Visualização</div>
+            <div class="card-corpo"><span class="badge badge-amarelo">Matplotlib</span></div>
+          </div>
+          <div class="card" style="flex:none; width:auto; padding:12px 16px;">
+            <div class="card-titulo">Saída</div>
+            <div class="card-corpo">
+              <span class="badge badge-ciano">Excel (.xlsx)</span>&nbsp;
+              <span class="badge badge-ciano">PNG</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2 mt8" style="gap:12px;">
+        <div class="destaque-box">
+          <span class="negrito ciano-txt">Decisão técnica importante:</span>
+          A divisão treino/teste é <span class="negrito">temporal (sem shuffle)</span> — fundamental para séries temporais,
+          evitando que dados futuros "contaminem" o treinamento e gerem métricas falsamente otimistas.
+        </div>
+        <div class="destaque-box verde">
+          <span class="negrito verde-txt">Repositório GitHub:</span><br>
+          <a href="https://github.com/LEUDOLOIOLA/Integrador" target="_blank"
+             style="color:var(--ciano); font-weight:700; word-break:break-all;">
+            github.com/LEUDOLOIOLA/Integrador
+          </a>
+        </div>
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Slide 5 de 9</span>
+      <div class="progress-bar" style="width:55.5%"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE 6 — METODOLOGIA E ANÁLISE EXPLORATÓRIA
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro">
+    <div class="grade"></div>
+    <div class="brilho-canto tl"></div>
+    <div class="conteudo">
+      <div class="slide-header">
+        <div class="slide-numero">6</div>
+        <div>
+          <div class="slide-titulo">Metodologia e Análise Exploratória</div>
+          <div class="slide-subtitulo">Algoritmo, features e descobertas dos dados</div>
+        </div>
+      </div>
+
+      <div class="grid2 mt8" style="flex:1; align-items:start;">
+        <!-- Importância de Features -->
+        <div>
+          <div class="card-titulo ciano-txt">Importância das Features (Random Forest)</div>
+          <div class="mt12">
+            <div class="feat-row"><span class="feat-nome">nivel_221_lag1</span><div class="feat-barra-bg"><div class="feat-barra" style="width:72%"></div></div><span class="feat-val">~0.72</span></div>
+            <div class="feat-row"><span class="feat-nome">media_movel_1h</span><div class="feat-barra-bg"><div class="feat-barra" style="width:12%"></div></div><span class="feat-val">~0.12</span></div>
+            <div class="feat-row"><span class="feat-nome">tendencia_1h</span><div class="feat-barra-bg"><div class="feat-barra" style="width:7%"></div></div><span class="feat-val">~0.07</span></div>
+            <div class="feat-row"><span class="feat-nome">tendencia_1min</span><div class="feat-barra-bg"><div class="feat-barra" style="width:4%"></div></div><span class="feat-val">~0.04</span></div>
+            <div class="feat-row"><span class="feat-nome">nivel_220_lag1</span><div class="feat-barra-bg"><div class="feat-barra" style="width:3%"></div></div><span class="feat-val">~0.03</span></div>
+            <div class="feat-row"><span class="feat-nome">BOMBA_1 / BOMBA_2</span><div class="feat-barra-bg"><div class="feat-barra" style="width:2%"></div></div><span class="feat-val">~0.02</span></div>
+          </div>
+          <div class="destaque-box mt12" style="font-size:.82rem;">
+            O nível do minuto anterior domina a previsão — o que é fisicamente correto: reservatórios mudam lentamente.
+          </div>
+        </div>
+
+        <!-- Metodologia -->
+        <div>
+          <div class="card-titulo ciano-txt">Engenharia de Features Criadas</div>
+          <table class="tabela mt12">
+            <tr><th>Feature</th><th>O que representa</th></tr>
+            <tr><td>nivel_221_lag1</td><td>Nível 1 min atrás</td></tr>
+            <tr><td>nivel_220_lag1</td><td>Nível UTR-220 1 min atrás</td></tr>
+            <tr><td>tendencia_1min</td><td>Variação no último minuto</td></tr>
+            <tr><td>tendencia_1h</td><td>Variação na última hora</td></tr>
+            <tr><td>media_movel_1h</td><td>Média dos últimos 60 min</td></tr>
+            <tr><td>hora</td><td>Hora do dia (padrão diário)</td></tr>
+            <tr><td>BOMBA_1/2</td><td>Status das bombas (0 ou 1)</td></tr>
+          </table>
+
+          <div class="destaque-box amarelo mt12" style="font-size:.82rem;">
+            <span class="negrito amarelo-txt">Decisão:</span>
+            Períodos com nível=0 (DF3) foram <span class="negrito">removidos do treinamento</span>
+            (DF2) para evitar que o modelo aprenda o padrão de falha como normal.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Slide 6 de 9</span>
+      <div class="progress-bar" style="width:66.6%"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE 7 — RESULTADOS E DEMONSTRAÇÃO PRÁTICA
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro">
+    <div class="grade"></div>
+    <div class="brilho-canto br"></div>
+    <div class="conteudo" style="overflow:hidden;">
+      <div class="slide-header">
+        <div class="slide-numero">7</div>
+        <div>
+          <div class="slide-titulo">Resultados e Demonstração Prática</div>
+          <div class="slide-subtitulo">Métricas, gráficos e os 3 cenários de uso</div>
+        </div>
+      </div>
+
+      <!-- Métricas -->
+      <div class="cards mt8">
+        <div class="card-metrica destaque">
+          <div class="valor">&gt;98%</div>
+          <div class="label">Acurácia</div>
+          <div class="desc">100 - MAPE no teste</div>
+        </div>
+        <div class="card-metrica destaque">
+          <div class="valor">~0.99</div>
+          <div class="label">R²</div>
+          <div class="desc">Coef. determinação</div>
+        </div>
+        <div class="card-metrica alerta">
+          <div class="valor">&lt;0.05m</div>
+          <div class="label">MAE</div>
+          <div class="desc">Erro médio absoluto</div>
+        </div>
+        <div class="card-metrica destaque">
+          <div class="valor">7h</div>
+          <div class="label">Horizonte futuro</div>
+          <div class="desc">420 passos recursivos</div>
+        </div>
+        <div class="card-metrica">
+          <div class="valor">6</div>
+          <div class="label">Arquivos gerados</div>
+          <div class="desc">DF1 → DF6 em Excel</div>
+        </div>
+      </div>
+
+      <!-- 3 cenários — apenas texto -->
+      <div class="grid3 mt12" style="align-items:start;">
+        <div class="card" style="padding:12px 14px;">
+          <div class="card-titulo"><span class="badge badge-ciano">Cenário 1</span></div>
+          <div class="card-corpo mt6" style="font-size:.82rem;">
+            <span class="negrito">Validação no conjunto de teste</span><br>
+            80% treino → 20% teste (temporal). Janela aleatória de 12h com real vs previsto sobrepostos.
+          </div>
+        </div>
+        <div class="card" style="padding:12px 14px;">
+          <div class="card-titulo"><span class="badge badge-amarelo">Cenário 2</span></div>
+          <div class="card-corpo mt6" style="font-size:.82rem;">
+            <span class="negrito">Falha simulada (06/mar 06:42-07:42)</span><br>
+            Previsão recursiva de 60 min sem ver o sensor real. Área sombreada = período sem sinal.
+          </div>
+        </div>
+        <div class="card" style="padding:12px 14px;">
+          <div class="card-titulo"><span class="badge badge-verde">Cenário 3</span></div>
+          <div class="card-corpo mt6" style="font-size:.82rem;">
+            <span class="negrito">Previsão futura — 7 horas</span><br>
+            420 minutos projetados a partir do último timestamp, com estado fixo de bombas e UTR-220.
+          </div>
+        </div>
+      </div>
+
+      <!-- Gráficos abaixo das caixas, lado a lado, largos -->
+      <div style="display:flex; gap:14px; margin-top:12px; flex:1;">
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:.75rem; color:var(--amarelo); font-weight:700; text-transform:uppercase; letter-spacing:.8px;">
+            Cenário 2 — Simulação de Falha (06/mar 06:42-07:42)
+          </div>
+          <img src="Simulação.jpeg" alt="Simulação de falha 06/mar"
+               style="width:100%; flex:1; border-radius:8px; border:1px solid rgba(245,158,11,.5);
+                      object-fit:cover; min-height:0;">
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; gap:4px;">
+          <div style="font-size:.75rem; color:var(--verde); font-weight:700; text-transform:uppercase; letter-spacing:.8px;">
+            Cenário 3 — Previsão Futura 7 Horas
+          </div>
+          <img src="Previsão.png" alt="Previsão futura 7h"
+               style="width:100%; flex:1; border-radius:8px; border:1px solid rgba(16,185,129,.5);
+                      object-fit:cover; min-height:0;">
+        </div>
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Slide 7 de 9</span>
+      <div class="progress-bar" style="width:77.7%"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE 8 — DESAFIOS, PROBLEMAS E AMEAÇAS
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro">
+    <div class="grade"></div>
+    <div class="brilho-canto tl"></div>
+    <div class="conteudo">
+      <div class="slide-header">
+        <div class="slide-numero">8</div>
+        <div>
+          <div class="slide-titulo">Desafios, Problemas e Ameaças ao Projeto</div>
+          <div class="slide-subtitulo">Visão crítica e transparência sobre limitações</div>
+        </div>
+      </div>
+
+      <div class="grid2 mt8" style="flex:1; align-items:start; gap:14px;">
+        <div>
+          <div class="card-titulo ciano-txt">Desafios Técnicos Encontrados</div>
+          <ul class="lista mt10">
+            <li>
+              <div>
+                <span class="negrito">Formato do timestamp corrompido:</span> Excel exportava vírgula como separador decimal com mais de 6 casas decimais — incompatível com Python. Solução: regex para truncar e substituir.
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="negrito">Dados irregulares:</span> leituras em intervalos de segundos não uniformes. Solução: resample para 1 minuto com média.
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="negrito">Zeros "fantasmas":</span> períodos onde o sensor reportava 0 (falha de leitura, não nível real). Solução: separar DF2 (treinamento) de DF3 (zeros).
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="negrito">Acumulação de erro recursivo:</span> em previsões longas, cada erro se propaga para o próximo passo.
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="card-titulo ciano-txt">Ameaças e Limitações</div>
+          <ul class="lista mt10">
+            <li>
+              <div>
+                <span class="badge badge-amarelo">Representatividade</span><br>
+                <span style="display:block;margin-top:4px;">Dados de apenas ~1 mês — comportamentos sazonais (seca, chuvas intensas) não estão representados no treino.</span>
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="badge badge-vermelho">Variável ausente</span><br>
+                <span style="display:block;margin-top:4px;">Consumo da população e vazão de entrada não estão disponíveis como features — o modelo "aprende o padrão" mas não a causalidade física.</span>
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="badge badge-amarelo">Viés temporal</span><br>
+                <span style="display:block;margin-top:4px;">Se o padrão operacional mudar (nova bomba, mudança de demanda), o modelo precisa ser re-treinado.</span>
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="badge badge-ciano">Mudança no Contexto</span><br>
+                <span style="display:block;margin-top:4px;">Se o padrão operacional mudar drasticamente (eventos climáticos, expansão da rede), a previsão de 3h pode divergir — o modelo assume condições estáveis e não captura mudanças abruptas no contexto real.</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Slide 8 de 9</span>
+      <div class="progress-bar" style="width:88.8%"></div>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       SLIDE 9 — CONCLUSÕES E PRÓXIMOS PASSOS
+  ============================================================ -->
+  <div class="slide slide-fundo-escuro">
+    <div class="grade"></div>
+    <div class="brilho-canto tl"></div>
+    <div class="brilho-canto br"></div>
+    <div class="conteudo">
+      <div class="slide-header">
+        <div class="slide-numero">9</div>
+        <div>
+          <div class="slide-titulo">Conclusões e Próximos Passos</div>
+          <div class="slide-subtitulo">Aprendizados e visão de futuro</div>
+        </div>
+      </div>
+
+      <div class="grid2 mt8" style="flex:1; align-items:start;">
+        <div>
+          <div class="card-titulo ciano-txt">Principais Conclusões</div>
+          <ul class="lista mt12">
+            <li>Random Forest com engenharia de features temporais atingiu <span class="verde-txt negrito">acurácia superior a 98%</span> na previsão minuto a minuto do nível da UTR-221</li>
+            <li>O modelo é capaz de <span class="ciano-txt negrito">substituir o sensor</span> durante falhas de comunicação com erro inferior a 5cm <span class="verde-txt negrito">e durante no máximo 3 horas</span></li>
+            <li>A abordagem <span class="negrito">recursiva (feed-forward)</span> funciona bem para horizontes de até 3h — erros crescem gradualmente em horizontes maiores não testados</li>
+            <li>A separação de dados por <span class="negrito">zero vs não-zero</span> foi decisiva para a qualidade do modelo</li>
+            <li>Features de tendência (1min e 1h) melhoram a previsão em pontos de inflexão do nível</li>
+          </ul>
+        </div>
+        <div>
+          <div class="card-titulo ciano-txt">Melhorias Planejadas</div>
+          <ul class="lista mt12">
+            <li>
+              <div>
+                <span class="badge badge-ciano">+ Dados</span><br>
+                <span style="display:block;margin-top:4px;">Coletar ao menos 6 meses para capturar sazonalidade e variações climáticas</span>
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="badge badge-verde">Deploy</span><br>
+                <span style="display:block;margin-top:4px;">Integrar o modelo ao SCADA para previsão em tempo real com alerta automático ao operador</span>
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="badge badge-amarelo">Dashboard</span><br>
+                <span style="display:block;margin-top:4px;">Criar painel interativo (Streamlit ou Power BI) com gráficos ao vivo e indicadores de confiança</span>
+              </div>
+            </li>
+            <li>
+              <div>
+                <span class="badge badge-ciano">Outros modelos</span><br>
+                <span style="display:block;margin-top:4px;">Testar LSTM (redes neurais recorrentes) para capturar dependências temporais longas</span>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="destaque-box verde mt12" style="text-align:center; font-size:1rem;">
+        <span class="verde-txt negrito">Machine Learning provou ser uma ferramenta viável para garantir resiliência operacional
+        em sistemas de abastecimento — mesmo quando os sensores falham, o modelo mantém o operador informado.</span>
+      </div>
+
+      <div class="mt12" style="text-align:center; border-top: 1px solid rgba(6,182,212,.25); padding-top:12px;">
+        <div style="font-size:.82rem; color:var(--cinza-medio); margin-bottom:6px; text-transform:uppercase; letter-spacing:1px;">Agradecimentos</div>
+        <div style="display:flex; justify-content:center; gap:30px; flex-wrap:wrap;">
+          <div>
+            <div style="font-size:.95rem; font-weight:700; color:var(--ciano);">Prof. Tarik Ponciano</div>
+            <div style="font-size:.78rem; color:var(--cinza-medio);">Orientação e fornecimento do algoritmo base</div>
+          </div>
+          <div>
+            <div style="font-size:.95rem; font-weight:700; color:var(--ciano);">Analistas da CAGECE</div>
+            <div style="font-size:.78rem; color:var(--cinza-medio);">Fornecimento dos dados operacionais do sistema</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="rodape">
+      <span class="rodape-logo">UTR-221 ML</span>
+      <span>Slide 9 de 9 — Obrigado!</span>
+      <div class="progress-bar" style="width:100%"></div>
+    </div>
+  </div>
+
+</div><!-- /slider -->
+
+<!-- ===== NAVEGAÇÃO ===== -->
+<div class="nav">
+  <button class="nav-btn" id="btn-prev">&#8592; Anterior</button>
+  <div class="indicadores" id="dots"></div>
+  <span class="nav-info" id="nav-info">1 / 9</span>
+  <button class="nav-btn" id="btn-next">Próximo &#8594;</button>
+</div>
+
+<div class="tecla-dica">← → ou Espaço para navegar &nbsp;|&nbsp; F para tela cheia</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const dotsContainer = document.getElementById('dots');
+  const navInfo = document.getElementById('nav-info');
+  let atual = 0;
+
+  // cria dots
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot' + (i === 0 ? ' ativo' : '');
+    d.onclick = () => ir(i);
+    dotsContainer.appendChild(d);
+  });
+
+  function ir(n) {
+    slides[atual].classList.remove('ativo');
+    dotsContainer.children[atual].classList.remove('ativo');
+    atual = (n + slides.length) % slides.length;
+    slides[atual].classList.add('ativo');
+    dotsContainer.children[atual].classList.add('ativo');
+    navInfo.textContent = `${atual + 1} / ${slides.length}`;
+  }
+
+  document.getElementById('btn-next').onclick = () => ir(atual + 1);
+  document.getElementById('btn-prev').onclick = () => ir(atual - 1);
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === ' ')  ir(atual + 1);
+    if (e.key === 'ArrowLeft')                    ir(atual - 1);
+    if (e.key === 'f' || e.key === 'F')           document.documentElement.requestFullscreen?.();
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual — UTR-221 Previsão de Pressão com ML</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/night.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css">
+<style>
+  :root { --r-heading-color: #00d4ff; --r-link-color: #00d4ff; }
+  .reveal h1 { font-size: 1.8em; color: #00d4ff; }
+  .reveal h2 { font-size: 1.4em; color: #00d4ff; border-bottom: 2px solid #00d4ff44; padding-bottom: 8px; }
+  .reveal h3 { font-size: 1.1em; color: #aaddff; }
+  .reveal pre code { font-size: 0.62em; line-height: 1.4; }
+  .reveal .slides section { text-align: left; }
+  .capa { text-align: center !important; }
+  .badge {
+    display: inline-block; background: #00d4ff22; border: 1px solid #00d4ff66;
+    border-radius: 4px; padding: 2px 10px; margin: 3px; font-size: 0.8em;
+  }
+  .card {
+    background: #ffffff0d; border: 1px solid #ffffff22; border-radius: 8px;
+    padding: 12px 16px; margin: 8px 0; font-size: 0.82em;
+  }
+  .green  { color: #4cff91; }
+  .yellow { color: #ffd166; }
+  .red    { color: #ff6b6b; }
+  .blue   { color: #74b9ff; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .metric { text-align:center; background:#00d4ff11; border:1px solid #00d4ff44;
+            border-radius:8px; padding:10px; }
+  .metric .val { font-size:1.6em; font-weight:bold; color:#00d4ff; }
+  .metric .lbl { font-size:0.7em; color:#aaa; margin-top:4px; }
+  .step { display:flex; align-items:flex-start; gap:12px; margin:8px 0; }
+  .step .num { background:#00d4ff; color:#000; border-radius:50%; width:26px; height:26px;
+               min-width:26px; display:flex; align-items:center; justify-content:center;
+               font-weight:bold; font-size:0.85em; }
+  .tag { background:#ff6b6b22; border:1px solid #ff6b6b66; border-radius:4px;
+         padding:1px 8px; font-size:0.75em; color:#ff6b6b; }
+  .tag.ok { background:#4cff9122; border-color:#4cff9166; color:#4cff91; }
+  table { font-size: 0.75em; width: 100%; }
+  th { background: #00d4ff22; color: #00d4ff; padding: 6px 10px; }
+  td { padding: 5px 10px; border-bottom: 1px solid #ffffff11; }
+  tr:hover td { background: #ffffff08; }
+  .reveal .progress { color: #00d4ff; }
+  .file-icon { font-size:1.2em; margin-right:6px; }
+  .arrow { color:#00d4ff; font-size:1.4em; margin: 0 8px; }
+  .flow { display:flex; align-items:center; flex-wrap:wrap; gap:4px; margin:10px 0; }
+  .flow-box { background:#00d4ff22; border:1px solid #00d4ff55; border-radius:6px;
+              padding:6px 12px; font-size:0.78em; text-align:center; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 1 — CAPA -->
+<section class="capa">
+  <br><br>
+  <h1>🚰 UTR-221</h1>
+  <h2 style="border:none; color:#aaddff; font-size:1.1em;">
+    Previsão de Pressão com Machine Learning
+  </h2>
+  <br>
+  <div style="font-size:0.85em; color:#aaa;">
+    Sistema SCADA · CAGECE · Projeto Integrador
+  </div>
+  <br>
+  <div>
+    <span class="badge">Python 3.13</span>
+    <span class="badge">Scikit-Learn</span>
+    <span class="badge">Streamlit</span>
+    <span class="badge">Pandas</span>
+    <span class="badge">Random Forest</span>
+  </div>
+  <br>
+  <div style="font-size:0.75em; color:#666;">
+    Use as setas ← → para navegar · Pressione F para tela cheia
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 2 — OBJETIVO -->
+<section>
+  <h2>🎯 Objetivo do Projeto</h2>
+  <div class="card">
+    <strong>Problema:</strong> Quando a UTR-221 (estação de bombeamento) perde a comunicação
+    com o sistema SCADA, os operadores ficam sem informação sobre a <strong>pressão da rede</strong>
+    por períodos que podem chegar a horas.
+  </div>
+  <div class="card" style="margin-top:12px;">
+    <strong>Solução:</strong> Um modelo de <strong>Machine Learning</strong> treinado com
+    dados históricos dos sensores é capaz de <em>prever a pressão minuto a minuto</em>
+    mesmo sem sinal, usando como base as últimas leituras conhecidas e o estado das bombas.
+  </div>
+  <br>
+  <div class="grid2">
+    <div class="card">
+      📥 <strong>Entrada</strong><br>
+      Estado das bombas, nível UTR-220,<br>histórico de pressão (60 min)
+    </div>
+    <div class="card">
+      📤 <strong>Saída</strong><br>
+      Pressão prevista (BAR) minuto<br>a minuto por até 7 horas
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 3 — VISÃO GERAL -->
+<section>
+  <h2>🗺️ Visão Geral — Fluxo do Sistema</h2>
+  <div class="flow">
+    <div class="flow-box">📊 urt220.xlsx<br><small>Dados brutos</small></div>
+    <span class="arrow">→</span>
+    <div class="flow-box">🧹 tratar_dados.py<br><small>Limpeza e imputação</small></div>
+    <span class="arrow">→</span>
+    <div class="flow-box">📋 urt220_tratado.xlsx<br><small>Dados limpos</small></div>
+  </div>
+  <div class="flow">
+    <div class="flow-box">📊 urt221.xlsx<br><small>Dados brutos</small></div>
+    <span class="arrow">→</span>
+    <div class="flow-box">🧹 tratar_dados.py<br><small>Limpeza e imputação</small></div>
+    <span class="arrow">→</span>
+    <div class="flow-box">📋 urt221_tratado.xlsx<br><small>Dados limpos</small></div>
+  </div>
+  <div class="flow" style="margin-top:8px;">
+    <div class="flow-box">📋 xlsx brutos<br><small>urt220 + urt221</small></div>
+    <span class="arrow">→</span>
+    <div class="flow-box">🤖 treinar_modelo.py<br><small>Treina Random Forest</small></div>
+    <span class="arrow">→</span>
+    <div class="flow-box">💾 .pkl<br><small>modelo + histórico + meta</small></div>
+  </div>
+  <div class="flow" style="margin-top:8px;">
+    <div class="flow-box">💾 .pkl<br><small>Artefatos do modelo</small></div>
+    <span class="arrow">→</span>
+    <div class="flow-box">🖥️ dashboard_utr221.py<br><small>Streamlit — interface</small></div>
+    <span class="arrow">→</span>
+    <div class="flow-box">📈 Simulação<br><small>Previsão interativa</small></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 4 — COMO EXECUTAR -->
+<section>
+  <h2>▶️ Como Executar — Passo a Passo</h2>
+  <div class="step">
+    <div class="num">1</div>
+    <div>
+      <strong>Instalar dependências</strong><br>
+      <code style="font-size:0.8em; background:#ffffff11; padding:4px 8px; border-radius:4px;">
+        pip install pandas numpy scikit-learn openpyxl joblib streamlit matplotlib
+      </code>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div>
+      <strong>Tratar os dados (opcional — já gerado)</strong><br>
+      <code style="font-size:0.8em; background:#ffffff11; padding:4px 8px; border-radius:4px;">
+        python tratar_dados.py
+      </code><br>
+      <small class="yellow">Gera: urt220_tratado.xlsx, urt221_tratado.xlsx, 4 gráficos .png</small>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div>
+      <strong>Treinar o modelo</strong><br>
+      <code style="font-size:0.8em; background:#ffffff11; padding:4px 8px; border-radius:4px;">
+        python treinar_modelo.py
+      </code><br>
+      <small class="yellow">Gera: modelo_utr221.pkl, historico_utr221.pkl, meta_utr221.pkl</small>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">4</div>
+    <div>
+      <strong>Abrir o dashboard</strong><br>
+      <code style="font-size:0.8em; background:#ffffff11; padding:4px 8px; border-radius:4px;">
+        python -m streamlit run dashboard_utr221.py
+      </code><br>
+      <small class="green">Abre automaticamente em http://localhost:8501</small>
+    </div>
+  </div>
+  <div class="step">
+    <div class="num">5</div>
+    <div>
+      <strong>Validação científica (opcional)</strong><br>
+      <code style="font-size:0.8em; background:#ffffff11; padding:4px 8px; border-radius:4px;">
+        python UTR221_ML_validacao.py
+      </code><br>
+      <small class="yellow">Gera gráficos de coeficientes e previsão 7h</small>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 5 — ARQUIVOS -->
+<section>
+  <h2>📁 Arquivos do Projeto</h2>
+  <table>
+    <tr><th>Arquivo</th><th>Tipo</th><th>Descrição</th></tr>
+    <tr><td>🗂️ urt220.xlsx</td><td><span class="tag">Entrada</span></td><td>Dados SCADA da UTR-220 (bombas + nível)</td></tr>
+    <tr><td>🗂️ urt221.xlsx</td><td><span class="tag">Entrada</span></td><td>Dados SCADA da UTR-221 (pressão)</td></tr>
+    <tr><td>🐍 tratar_dados.py</td><td><span class="tag ok">Script</span></td><td>Limpeza, imputação e regularização dos dados</td></tr>
+    <tr><td>🐍 treinar_modelo.py</td><td><span class="tag ok">Script</span></td><td>Engenharia de features + treinamento do modelo</td></tr>
+    <tr><td>🐍 UTR221_ML_validacao.py</td><td><span class="tag ok">Script</span></td><td>Análise científica: coeficientes + previsão 7h</td></tr>
+    <tr><td>🐍 dashboard_utr221.py</td><td><span class="tag ok">App</span></td><td>Dashboard Streamlit interativo</td></tr>
+    <tr><td>📋 urt220_tratado.xlsx</td><td><span class="tag">Saída</span></td><td>UTR-220 limpa (84.221 linhas, 1 min)</td></tr>
+    <tr><td>📋 urt221_tratado.xlsx</td><td><span class="tag">Saída</span></td><td>UTR-221 limpa (84.221 linhas, 1 min)</td></tr>
+    <tr><td>💾 modelo_utr221.pkl</td><td><span class="tag">Modelo</span></td><td>Random Forest treinado (serializado)</td></tr>
+    <tr><td>💾 historico_utr221.pkl</td><td><span class="tag">Modelo</span></td><td>Histórico para seed do dashboard</td></tr>
+    <tr><td>💾 meta_utr221.pkl</td><td><span class="tag">Modelo</span></td><td>Metadados: features, métricas, setpoints</td></tr>
+    <tr><td>📊 DF6_futuro_7h.xlsx</td><td><span class="tag">Saída</span></td><td>Previsão das próximas 7 horas</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 6 — DADOS URT220 -->
+<section>
+  <h2>📊 Dados — URT-220 (Preditores)</h2>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        📅 <strong>Período:</strong> 01/02/2026 a 31/03/2026<br>
+        📏 <strong>Registros:</strong> 83.090 linhas<br>
+        📐 <strong>Colunas:</strong> 85 variáveis<br>
+        ⏱️ <strong>Frequência:</strong> ~1 leitura/min
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>Principais sensores:</strong>
+        <ul style="margin:6px 0; padding-left:16px;">
+          <li>PIT_220_S01_000 — Pressão (BAR)</li>
+          <li>LIT_220_RA2_000 — Nível Reservatório A</li>
+          <li>LIT_220_RE1_000 — Nível Reservatório 1</li>
+          <li>CMB_220_S2A_EST — Status Bomba 1</li>
+          <li>CMB_220_S2B_EST — Status Bomba 2</li>
+          <li>CMB_220_S2A_AMP — Corrente Bomba 1 (A)</li>
+          <li>CMB_220_S2B_AMP — Corrente Bomba 2 (A)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <strong>Colunas QUALITY:</strong><br>
+        Cada sensor tem uma coluna _QUALITY:<br>
+        <span class="green">192 = dado válido</span><br>
+        <span class="red">0 = dado inválido (falha SCADA)</span>
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>Operação das Bombas (rodízio):</strong><br>
+        <span class="blue">Bomba 1 (S2A):</span> ligada 51,1% do tempo<br>
+        <span class="yellow">Bomba 2 (S2B):</span> ligada 22,8% do tempo<br>
+        <span class="green">Nunca operam juntas</span> — sistema de rodízio exclusivo
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>115 lacunas temporais</strong> detectadas<br>
+        Maior lacuna: <span class="red">3h 8min</span> (18/03/2026)<br>
+        Média das lacunas: ~8 min
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 7 — DADOS URT221 -->
+<section>
+  <h2>📊 Dados — URT-221 (Variável Alvo)</h2>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        📅 <strong>Período:</strong> 01/02/2026 a 31/03/2026<br>
+        📏 <strong>Registros:</strong> 83.091 linhas<br>
+        📐 <strong>Colunas:</strong> 9 variáveis<br>
+        ⏱️ <strong>Frequência:</strong> ~1 leitura/min
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>Sensores disponíveis:</strong>
+        <ul style="margin:6px 0; padding-left:16px;">
+          <li>PIT_221_S01_000 — <strong>Pressão (BAR)</strong> ← <span class="green">alvo do modelo</span></li>
+          <li>LIT_221_RE4_000 — Nível Reservatório 4</li>
+          <li>FIT_221_S01_000 — Vazão (m³/h)</li>
+          <li>FIT_221_S01_TLL — Vazão Acumulada (m³)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <strong>Dados ausentes antes do tratamento:</strong>
+        <table style="margin-top:8px;">
+          <tr><th>Sensor</th><th>NaN</th><th>%</th></tr>
+          <tr><td>FIT_221_S01_TLL</td><td class="red">22.389</td><td class="red">26,9%</td></tr>
+          <tr><td>PIT_221_S01_000</td><td class="yellow">18.735</td><td class="yellow">22,5%</td></tr>
+          <tr><td>FIT_221_S01_000</td><td class="yellow">18.505</td><td class="yellow">22,3%</td></tr>
+          <tr><td>LIT_221_RE4_000</td><td class="yellow">9.343</td><td class="yellow">11,2%</td></tr>
+        </table>
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>Estatísticas da Pressão (após tratamento):</strong><br>
+        Mín: 0,30 BAR &nbsp;|&nbsp; Máx: 3.072 BAR*<br>
+        Média: 1,70 BAR &nbsp;|&nbsp; Mediana: 1,60 BAR<br>
+        <small class="red">* outliers de pico durante partidas das bombas</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 8 — TRATAMENTO -->
+<section>
+  <h2>🧹 Tratamento de Dados — tratar_dados.py</h2>
+  <div style="font-size:0.82em;">
+    <strong>Problema:</strong> dados brutos do SCADA têm falhas de comunicação,
+    lacunas temporais e timestamps irregulares.
+  </div>
+  <br>
+  <div class="grid2">
+    <div>
+      <h3>Etapas do tratamento:</h3>
+      <div class="step"><div class="num">1</div>
+        <div><strong>Parse de Timestamp</strong><br>
+        Converte "01/02/26 00:00:27,954000000" → datetime</div>
+      </div>
+      <div class="step"><div class="num">2</div>
+        <div><strong>Mascaramento QUALITY=0</strong><br>
+        Dado inválido → NaN (não simplesmente zero)</div>
+      </div>
+      <div class="step"><div class="num">3</div>
+        <div><strong>Regularização 1 min</strong><br>
+        Resample para índice temporal uniforme</div>
+      </div>
+      <div class="step"><div class="num">4</div>
+        <div><strong>Imputação</strong><br>
+        Analógicos → interpolação linear (limite: 30 min)<br>
+        Status/bombas → forward-fill</div>
+      </div>
+    </div>
+    <div>
+      <h3>Resultados:</h3>
+      <div class="card">
+        <strong>URT-220:</strong><br>
+        193.566 valores imputados<br>
+        Lacunas > 30 min: 4.756 NaN restantes
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>URT-221:</strong><br>
+        22.136 valores imputados<br>
+        Lacunas longas: 67.475 NaN restantes
+      </div>
+      <div class="card" style="margin-top:8px; border-color:#4cff9166;">
+        <strong class="green">Antes:</strong> 83.090 linhas irregulares<br>
+        <strong class="green">Depois:</strong> 84.221 linhas a cada 1 min
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 9 — FEATURES -->
+<section>
+  <h2>🔧 Engenharia de Features (19 variáveis)</h2>
+  <table>
+    <tr><th>Feature</th><th>Descrição</th><th>Importância*</th></tr>
+    <tr><td class="green">nivel_221_lag1</td><td>Pressão UTR-221 no minuto anterior</td><td class="green">99,11%</td></tr>
+    <tr><td>tendencia_5min</td><td>Variação: pressão agora vs 5 min atrás</td><td>0,34%</td></tr>
+    <tr><td>tendencia_1min</td><td>Variação: pressão agora vs 1 min atrás</td><td>0,11%</td></tr>
+    <tr><td>media_movel_1h</td><td>Média dos últimos 60 minutos</td><td>0,09%</td></tr>
+    <tr><td>media_movel_15m</td><td>Média dos últimos 15 minutos</td><td>0,09%</td></tr>
+    <tr><td>nivel_220_lag1</td><td>Nível do reservatório UTR-220</td><td>0,06%</td></tr>
+    <tr><td class="blue">rodizio</td><td>Qual bomba está no turno (1=B1, 2=B2, 0=nenhuma)</td><td>0,04%</td></tr>
+    <tr><td>BOMBA_1</td><td>Status da Bomba 1 (0=desligada, 1=ligada)</td><td>0,04%</td></tr>
+    <tr><td>nivel_221_lag5</td><td>Pressão UTR-221 há 5 minutos</td><td>0,03%</td></tr>
+    <tr><td>hora</td><td>Hora do dia (padrão de consumo)</td><td>0,02%</td></tr>
+    <tr><td>turno</td><td>Turno: 0=madrugada, 1=manhã, 2=tarde, 3=noite</td><td>~0%</td></tr>
+    <tr><td>BOMBA_2 / lag1 / transição</td><td>Status Bomba 2 e derivadas</td><td>~0%</td></tr>
+    <tr><td>tempo_ligada_B2</td><td>Minutos consecutivos com Bomba 2 ligada</td><td>~0%</td></tr>
+  </table>
+  <small class="yellow">* Importância no modelo de 1 minuto à frente. No modelo de 30 min, rodizio sobe 9×.</small>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 10 — RANDOM FOREST -->
+<section>
+  <h2>🤖 Algoritmo — Random Forest Regressor</h2>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <strong>O que é Random Forest?</strong><br><br>
+        É um conjunto (ensemble) de várias <strong>árvores de decisão</strong>.
+        Cada árvore aprende com uma amostra diferente dos dados.
+        A previsão final é a <em>média</em> das previsões de todas as árvores.<br><br>
+        Isso reduz o overfitting e aumenta a robustez.
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <strong>Por que foi escolhido?</strong>
+        <ul style="padding-left:16px; margin:6px 0;">
+          <li>Lida bem com dados não-lineares</li>
+          <li>Robusto a outliers</li>
+          <li>Fornece importância das features</li>
+          <li>Não precisa de normalização</li>
+          <li>Rápido para prever (tempo real)</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <strong>Configuração do modelo:</strong>
+        <pre><code class="python">RandomForestRegressor(
+    n_estimators = 200,  # 200 árvores
+    random_state = 42,   # reprodutibilidade
+    n_jobs       = -1    # todos os núcleos CPU
+)</code></pre>
+      </div>
+      <div class="card" style="margin-top:10px;">
+        <strong>Divisão dos dados:</strong><br>
+        80% treino (dados mais antigos)<br>
+        20% teste (dados mais recentes)<br><br>
+        <span class="yellow">⚠️ Sem shuffle!</span> Série temporal deve
+        manter a ordem cronológica.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 11 — MÉTRICAS -->
+<section>
+  <h2>📈 Métricas do Modelo (horizonte 1 minuto)</h2>
+  <div class="grid3" style="margin-bottom:16px;">
+    <div class="metric"><div class="val">99,71%</div><div class="lbl">Acurácia (100 - MAPE)</div></div>
+    <div class="metric"><div class="val">0,29%</div><div class="lbl">MAPE (Erro % Médio)</div></div>
+    <div class="metric"><div class="val">0,8966</div><div class="lbl">R² (Coef. Determinação)</div></div>
+    <div class="metric"><div class="val">0,0039</div><div class="lbl">MAE (BAR)</div></div>
+    <div class="metric"><div class="val">0,0255</div><div class="lbl">RMSE (BAR)</div></div>
+    <div class="metric"><div class="val">39.913</div><div class="lbl">Linhas de treino</div></div>
+  </div>
+  <div class="card">
+    <strong>Interpretação das métricas:</strong>
+    <ul style="padding-left:16px; margin:6px 0; font-size:0.88em;">
+      <li><strong>MAE 0,0039 BAR</strong> → erro médio de apenas 3,9 millibar por previsão</li>
+      <li><strong>RMSE 0,0255 BAR</strong> → desvio típico do erro (penaliza erros grandes)</li>
+      <li><strong>R² 0,8966</strong> → o modelo explica 89,66% da variação da pressão</li>
+      <li><strong>MAPE 0,29%</strong> → erro percentual médio em relação ao valor real</li>
+      <li><strong>Acurácia 99,71%</strong> → calculada como 100% − MAPE</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 12 — SETPOINTS -->
+<section>
+  <h2>⚙️ Lógica de Controle das Bombas</h2>
+  <div class="card" style="text-align:center; font-size:1em;">
+    <span class="red">Pressão ≥ 1,68 BAR</span> &nbsp;→&nbsp; Bombas <strong>DESLIGAM</strong>
+    &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+    <span class="green">Pressão ≤ 1,55 BAR</span> &nbsp;→&nbsp; Bombas <strong>LIGAM</strong>
+  </div>
+  <br>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <strong>Por que isso é importante?</strong><br><br>
+        As bombas operam em <em>rodízio exclusivo</em>:
+        B1 e B2 nunca funcionam ao mesmo tempo.
+        O controle por setpoints simula o comportamento
+        real do sistema de automação durante a falha.<br><br>
+        Sem essa lógica, a previsão teria pressão
+        continuamente subindo ou caindo.
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <strong>Como funciona no modelo:</strong>
+        <pre><code class="python">if pressao >= 1.68:
+    bomba1 = 0  # desliga
+    bomba2 = 0
+elif pressao <= 1.55:
+    bomba1 = 1  # liga
+    bomba2 = 1</code></pre>
+        <small class="yellow">Esses valores são ajustáveis no dashboard</small>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 13 — DASHBOARD -->
+<section>
+  <h2>🖥️ Dashboard — Visão Geral</h2>
+  <div class="grid2">
+    <div>
+      <h3>Painel Lateral (inputs):</h3>
+      <div class="card">
+        📅 <strong>Período da Falha</strong><br>
+        &nbsp;&nbsp; Data de início, hora, duração (5–420 min)
+      </div>
+      <div class="card" style="margin-top:6px;">
+        ⚙️ <strong>Controle das Bombas</strong><br>
+        &nbsp;&nbsp; Setpoint alto (1,68 BAR) — desliga<br>
+        &nbsp;&nbsp; Setpoint baixo (1,55 BAR) — liga<br>
+        &nbsp;&nbsp; Estado inicial: automático ou manual
+      </div>
+      <div class="card" style="margin-top:6px;">
+        💧 <strong>Nível UTR-220</strong><br>
+        &nbsp;&nbsp; Nível do reservatório durante a falha
+      </div>
+    </div>
+    <div>
+      <h3>Painel Principal (outputs):</h3>
+      <div class="card">
+        📊 <strong>Cards de métricas</strong><br>
+        &nbsp;&nbsp; Acurácia, MAE, R², horizonte
+      </div>
+      <div class="card" style="margin-top:6px;">
+        📈 <strong>Gráfico</strong><br>
+        &nbsp;&nbsp; Linha azul: 1h de dados reais antes da falha<br>
+        &nbsp;&nbsp; Linha laranja: previsão ML durante a falha<br>
+        &nbsp;&nbsp; Linha verde: real (se disponível para comparação)<br>
+        &nbsp;&nbsp; Linhas cinzas: setpoints 1,68 / 1,55
+      </div>
+      <div class="card" style="margin-top:6px;">
+        📋 <strong>Tabela + Download CSV</strong><br>
+        &nbsp;&nbsp; Previsto, Real, Erro, Bomba 1, Bomba 2
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 14 — COMO USAR DASHBOARD -->
+<section>
+  <h2>📱 Como Usar o Dashboard</h2>
+  <div class="step">
+    <div class="num">1</div>
+    <div>Abra o terminal na pasta do projeto e execute:<br>
+    <code style="background:#ffffff11; padding:3px 8px; border-radius:4px; font-size:0.85em;">
+      python -m streamlit run dashboard_utr221.py
+    </code></div>
+  </div>
+  <div class="step">
+    <div class="num">2</div>
+    <div>No painel lateral, defina <strong>quando</strong> a falha começou
+    (data + hora) e por quanto tempo durou.</div>
+  </div>
+  <div class="step">
+    <div class="num">3</div>
+    <div>Ajuste os <strong>setpoints</strong> se necessário (padrão: 1,68 / 1,55 BAR).
+    Escolha o estado inicial das bombas.</div>
+  </div>
+  <div class="step">
+    <div class="num">4</div>
+    <div>Informe o <strong>nível UTR-220</strong> — nível atual do reservatório de montante.</div>
+  </div>
+  <div class="step">
+    <div class="num">5</div>
+    <div>Clique em <strong>"Executar Simulação"</strong> e visualize o gráfico
+    com a previsão minuto a minuto.</div>
+  </div>
+  <div class="step">
+    <div class="num">6</div>
+    <div>Baixe o resultado em CSV usando o botão <strong>"Baixar resultado em CSV"</strong>.</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 15 — TECNOLOGIAS -->
+<section>
+  <h2>🛠️ Tecnologias Utilizadas</h2>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        🐍 <strong>Python 3.13</strong><br>
+        Linguagem de programação principal.<br>
+        Ampla adoção em ciência de dados.
+      </div>
+      <div class="card" style="margin-top:8px;">
+        🐼 <strong>Pandas 2.x</strong><br>
+        Manipulação de DataFrames, resample de séries
+        temporais, merge de tabelas, leitura de Excel.
+      </div>
+      <div class="card" style="margin-top:8px;">
+        🔢 <strong>NumPy</strong><br>
+        Operações vetorizadas e cálculos matemáticos
+        sobre arrays multidimensionais.
+      </div>
+      <div class="card" style="margin-top:8px;">
+        🤖 <strong>Scikit-Learn</strong><br>
+        Biblioteca de ML: RandomForestRegressor,
+        métricas (MAE, RMSE, R², MAPE).
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        📊 <strong>Matplotlib</strong><br>
+        Geração de gráficos estáticos:
+        comparativos antes/depois, previsão futura,
+        importância de features.
+      </div>
+      <div class="card" style="margin-top:8px;">
+        🌐 <strong>Streamlit</strong><br>
+        Framework Python para criar aplicações
+        web interativas sem HTML/JS.
+        Deploy instantâneo no navegador.
+      </div>
+      <div class="card" style="margin-top:8px;">
+        💾 <strong>Joblib</strong><br>
+        Serialização eficiente de modelos Python
+        (salvar/carregar .pkl).
+      </div>
+      <div class="card" style="margin-top:8px;">
+        📋 <strong>OpenPyXL</strong><br>
+        Leitura e escrita de arquivos Excel (.xlsx)
+        via Pandas.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 16 — ARQUITETURA ML -->
+<section>
+  <h2>🧠 Conceitos de Machine Learning Utilizados</h2>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <strong>Série Temporal Supervisionada</strong><br>
+        O problema é transformado em aprendizado supervisionado:
+        usamos leituras passadas (t-1, t-5, t-15, t-60) para
+        prever a leitura futura (t+1).
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>Feature Engineering</strong><br>
+        Criação de variáveis derivadas: lags, médias móveis,
+        tendências, indicadores de rodízio. Cada variável
+        captura um aspecto diferente do comportamento.
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>Walk-Forward Validation</strong><br>
+        Divisão temporal (80% treino / 20% teste) sem embaralhamento,
+        respeitando a ordem natural dos dados.
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <strong>Previsão Recursiva</strong><br>
+        Para prever múltiplos passos à frente, a previsão
+        de cada minuto é usada como entrada do próximo.
+        Isso permite simular horas de falha com apenas
+        um modelo de 1 minuto.
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>Imputação de Dados</strong><br>
+        Interpolação linear para sensores analógicos:
+        estima valores entre dois pontos válidos.
+        Forward-fill para status binários:
+        mantém o último estado conhecido.
+      </div>
+      <div class="card" style="margin-top:8px;">
+        <strong>Importância de Features</strong><br>
+        O Random Forest calcula quanto cada variável
+        contribuiu para as decisões das árvores.
+        Permite entender quais dados são mais relevantes.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 17 — VALIDAÇÃO -->
+<section>
+  <h2>🔬 Arquivo de Validação — UTR221_ML_validacao.py</h2>
+  <div style="font-size:0.85em; margin-bottom:10px;">
+    Este script é o <em>laboratório científico</em> do projeto.
+    Ele treina o modelo, compara horizontes diferentes e gera previsão futura de 7 horas.
+  </div>
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <strong>O que ele faz:</strong>
+        <ul style="padding-left:16px; margin:6px 0;">
+          <li>Treina modelo 1 min <em>e</em> 30 min simultaneamente</li>
+          <li>Compara importância das features lado a lado</li>
+          <li>Calcula MAE, RMSE, R², MAPE, Acurácia</li>
+          <li>Previsão recursiva das próximas 7 horas</li>
+          <li>Exporta DF6_futuro_7h.xlsx</li>
+          <li>Gera gráfico previsao_futura_7h.png</li>
+          <li>Gera gráfico coeficientes_comparativo.png</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <strong>Por que dois horizontes?</strong><br><br>
+        No horizonte de <span class="green">1 minuto</span>,
+        a pressão atual (lag1) domina com 99% de importância —
+        previsão trivial mas muito precisa.<br><br>
+        No horizonte de <span class="yellow">30 minutos</span>,
+        o <em>rodízio das bombas</em> ganha 9× mais importância,
+        revelando a física real do sistema.<br><br>
+        O modelo de 1 min é usado no dashboard por
+        sua maior precisão na simulação recursiva.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════ SLIDE 18 — CONCLUSÃO -->
+<section class="capa">
+  <br>
+  <h2 style="border:none;">✅ Conclusão</h2>
+  <br>
+  <div class="grid3" style="margin-bottom:16px;">
+    <div class="metric"><div class="val">99,71%</div><div class="lbl">Acurácia do modelo</div></div>
+    <div class="metric"><div class="val">84.221</div><div class="lbl">Minutos de dados tratados</div></div>
+    <div class="metric"><div class="val">19</div><div class="lbl">Features criadas</div></div>
+  </div>
+  <div class="card" style="text-align:left; font-size:0.88em; margin:0 auto; max-width:80%;">
+    O sistema desenvolvido permite que operadores da CAGECE
+    acompanhem a pressão da UTR-221 durante falhas de comunicação
+    com precisão de 99,71%, usando apenas dados já disponíveis
+    no sistema SCADA.<br><br>
+    A ferramenta é de fácil uso, executa localmente sem
+    necessidade de internet, e pode ser adaptada para
+    outras UTRs trocando os arquivos de dados.
+  </div>
+  <br>
+  <div style="font-size:0.8em; color:#888;">
+    Projeto Integrador · Análise de Dados · SENEC / CAGECE
+  </div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    progress: true,
+    controls: true,
+    center: false,
+    plugins: [ RevealHighlight, RevealNotes ],
+    keyboard: { 13: 'next' }
+  });
+</script>
+</body>
+</html>
